@@ -12,12 +12,31 @@ namespace Mango.Services.AuthAPI.Service
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IJwtTokenGenerator _generator;
 
-        public AuthService(AppDbContext context , UserManager<ApplicationUser> userManager , RoleManager<IdentityRole> roleManager)
+        public AuthService(AppDbContext context , UserManager<ApplicationUser> userManager , RoleManager<IdentityRole> roleManager , IJwtTokenGenerator generator)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
+            _generator = generator;
+        }
+
+        public async Task<bool> AssignRole(string email, string roleName)
+        {
+            var user = _context.ApplicationUsers.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
+            if (user != null)
+            {
+                if (!_roleManager.RoleExistsAsync(roleName).GetAwaiter().GetResult())
+                {
+                    _roleManager.CreateAsync(new IdentityRole(roleName)).GetAwaiter().GetResult();
+                }
+
+                await _userManager.AddToRoleAsync(user, roleName);
+
+                return true;
+            }
+            return false;
         }
 
         public async Task<LoginResponseDto> Login(LoginRequestDto loginRequestDto)
@@ -29,6 +48,7 @@ namespace Mango.Services.AuthAPI.Service
                 return new LoginResponseDto() { User = null, Token = "" };
 
             }
+            var token = _generator.GenerateToken(user);
 
             UserDto userDto = new()
             {
@@ -41,7 +61,7 @@ namespace Mango.Services.AuthAPI.Service
             LoginResponseDto loginResponseDto = new LoginResponseDto()
             {
                 User = userDto,
-                Token = ""
+                Token = token
             };
             return loginResponseDto;
         }
