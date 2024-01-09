@@ -8,22 +8,22 @@
         <div class="row text-center">
             <div class="row">
                 <div class="col -12 col-md-6 offset-md-3 pb-2">
-                    <input asp-for="Email" class="form-control" placeholder="Email..." />
+                    <input asp-for="Email" class="form-control" placeholder="Email..." type="email"/>
                     <span asp-validation-for="Email" class="text-danger"/>
                 </div>
                 <div class="col -12 col-md-6 offset-md-3 pb-2">
-                    <input asp-for="Name" class="form-control" placeholder="Name..." />
+                    <input asp-for="Name" class="form-control" placeholder="Name..."  />
                     <span asp-validation-for="Name" class="text-danger" />
 
                 </div>
                 <div class="col -12 col-md-6 offset-md-3 pb-2">
-                    <input asp-for="PhoneNumber" class="form-control" placeholder="PhoneNumber..." />
+                    <input asp-for="PhoneNumber" class="form-control" placeholder="PhoneNumber..." type="number" />
                     <span asp-validation-for="PhoneNumber" class="text-danger" />
 
                 </div>
 
                 <div class="col -12 col-md-6 offset-md-3 pb-2">
-                    <input asp-for="Password" class="form-control" placeholder="Password..." />
+                    <input asp-for="Password" class="form-control" placeholder="Password..." type="password" />
                     <span asp-validation-for="Password" class="text-danger" />
 
                 </div>
@@ -41,3 +41,7 @@
         </div>
     </div>
 </form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

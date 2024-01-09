@@ -14,7 +14,7 @@ namespace Mango.Services.AuthAPI.Service
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IJwtTokenGenerator _generator;
 
-        public AuthService(AppDbContext context , UserManager<ApplicationUser> userManager , RoleManager<IdentityRole> roleManager , IJwtTokenGenerator generator)
+        public AuthService(AppDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IJwtTokenGenerator generator)
         {
             _context = context;
             _userManager = userManager;
@@ -43,12 +43,13 @@ namespace Mango.Services.AuthAPI.Service
         {
             var user = _context.ApplicationUsers.FirstOrDefault(u => u.UserName.ToLower() == loginRequestDto.UserName.ToLower());
             bool isValid = await _userManager.CheckPasswordAsync(user, loginRequestDto.Password);
-            if (user==null || isValid == false)
+            if (user == null || isValid == false)
             {
                 return new LoginResponseDto() { User = null, Token = "" };
-
             }
-            var token = _generator.GenerateToken(user);
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var token = _generator.GenerateToken(user, roles);
 
             UserDto userDto = new()
             {
@@ -79,7 +80,7 @@ namespace Mango.Services.AuthAPI.Service
 
             try
             {
-                var result = await _userManager.CreateAsync(user,registrationRequestDto.Password);
+                var result = await _userManager.CreateAsync(user, registrationRequestDto.Password);
                 if (result.Succeeded)
                 {
                     var userToReturn = await _context.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName == registrationRequestDto.Email);
@@ -96,11 +97,9 @@ namespace Mango.Services.AuthAPI.Service
                 {
                     return result.Errors.FirstOrDefault().Description;
                 }
-
             }
             catch (Exception ex)
             {
-
                 return "Error Encountered";
             }
         }

@@ -9,24 +9,30 @@ namespace Mango.Web.Service
     public class BaseService : IBaseService
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ITokenProvider _token;
 
-        public BaseService(IHttpClientFactory httpClientFactory)
+        public BaseService(IHttpClientFactory httpClientFactory, ITokenProvider token)
         {
             _httpClientFactory = httpClientFactory;
+            _token = token;
         }
 
-        public async Task<ResponseDto?> SendAsync(RequestDto requestDto)
+        public async Task<ResponseDto?> SendAsync(RequestDto requestDto, bool withBearer = true)
         {
             HttpClient client = _httpClientFactory.CreateClient("MangoAPI");
             HttpRequestMessage message = new();
             message.Headers.Add("Accept", "application/json");
+            if (withBearer)
+            {
+                var token = _token.GetToken();
+                message.Headers.Add("Authorization", $"Bearer {token}");
+            }
 
             message.RequestUri = new Uri(requestDto.Url);
 
-            if (requestDto.Data!=null)
+            if (requestDto.Data != null)
             {
                 message.Content = new StringContent(JsonConvert.SerializeObject(requestDto.Data), Encoding.UTF8, "application/json");
-
             }
 
             HttpResponseMessage? apiResponse = null;
@@ -36,14 +42,17 @@ namespace Mango.Web.Service
                 case Utility.SD.ApiType.GET:
                     message.Method = HttpMethod.Get;
                     break;
+
                 case Utility.SD.ApiType.POST:
                     message.Method = HttpMethod.Post;
 
                     break;
+
                 case Utility.SD.ApiType.PUT:
                     message.Method = HttpMethod.Put;
 
                     break;
+
                 case Utility.SD.ApiType.DELETE:
                     message.Method = HttpMethod.Delete;
 
@@ -54,17 +63,20 @@ namespace Mango.Web.Service
 
             try
             {
-
                 switch (apiResponse.StatusCode)
                 {
                     case HttpStatusCode.NotFound:
                         return new() { IsSuccess = false, Message = "Not Found" };
+
                     case HttpStatusCode.Forbidden:
                         return new() { IsSuccess = false, Message = "Access Denied" };
+
                     case HttpStatusCode.Unauthorized:
                         return new() { IsSuccess = false, Message = "Unauthorized" };
+
                     case HttpStatusCode.InternalServerError:
                         return new() { IsSuccess = false, Message = "Internal Server Error" };
+
                     default:
                         var apiContent = await apiResponse.Content.ReadAsStringAsync();
                         var apiResponseDto = JsonConvert.DeserializeObject<ResponseDto>(apiContent);
@@ -80,7 +92,6 @@ namespace Mango.Web.Service
                 };
                 return dto;
             }
-            }
         }
     }
-
+}
